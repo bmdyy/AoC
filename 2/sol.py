@@ -37,10 +37,10 @@ for line in f:
     
     else:
         num_pos = 0
-        for i in range(len(password)):
-            if password[i] == letter and str(i + 1) in indicies:
+        for i in indicies:
+            if password[int(i) - 1] == letter:
                 num_pos = num_pos + 1
-        
+
         if num_pos == 1:
             num_valid = num_valid + 1
 
