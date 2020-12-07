@@ -1,78 +1,52 @@
 #!/usr/bin/python
 
-class Bag:
-    def __init__(self, num, col):
-        self.col = col
-        self.num = num
-        self.holds = []
+with open("input", "r") as f:
+    d = {}
 
-    def _holds(self, bag):
-        self.holds.append(bag)
-   
-    def get_child(self, bag):
-        for b in self.holds:
-            if b.col == bag.col:
-                return b 
-        for b in self.holds:
-            r = b.get_child(bag)
-            if r != None:
-                return r
-        return None
+    for line in f:
+        line = line.rstrip()
+        outer, inner = line.split(" contain ")
+        outer = outer[:-5]
 
-    def weight(self):
-        total = 0
-        for child in self.holds:
-            if child.num != 0:
-                total += child.num * (1 + child.weight())
-        return total
+        for i in inner.replace("no", "0").split(", "):
+            i = i.split(" ")
+            num = i[0]
+            col = " ".join(i[1:3])
+            tmp = "x".join([num,col])
 
-    def __str__(self):
-        if len(self.holds)>0:
-            s = []
-            for h in self.holds:
-                s.append(h.__str__())
-            s=" + ".join(s)
-            return "%d %s [HOLDS %s]" % (self.num, self.col, s)
-            #return "%d+%d*(%s)" % (self.num, self.num, s)
-        else:
-            return "%d %s" % (self.num, self.col)
-            #return "%d" % self.num
+            if outer in d:
+                d[outer].append(tmp)
+            else:
+                d[outer] = [tmp]
 
-lines = [line.rstrip() for line in open("input", "r")]
-holds_our_targets = []
-we_want = ["shiny gold"]
-shiny_holds = []
-root = Bag(1, "shiny gold")
-last_len = 0
-while last_len != len(we_want):
-    last_len = len(we_want)
-    for line in lines:
-        tk = line.split(" contain ")
-        outer = tk[0][:-5]
-        inner = tk[1].split(", ")
-        
-        for i in inner:
-            i2 = i.replace("no other","0")
-            i2 = i2.split(" ")
-            num = int(i2[0])
-            col = " ".join(i2[1:3]) # other, bags if num = 0
+def can_contain(col):
+    target_colors = [col]
 
-            if outer == "shiny gold" and [num,col] not in shiny_holds:
-                shiny_holds.append([num,col])
-                root._holds(Bag(num, col))
+    for i in range(5):
+        for outer in d:        
+            all_contents = d[outer]
+            for contains in all_contents:
+                color = contains.split("x")[1]
+                if color in target_colors:
+                    if outer not in target_colors:
+                        target_colors.append(outer)
+    return len(target_colors)-1 # " -1 to ignore shiny gold
 
-            for o in shiny_holds:
-                if outer == o[1] and [num,col] not in shiny_holds:
-                    shiny_holds.append([num,col])
-                    root.get_child(Bag(o[0],o[1]))._holds(Bag(num,col))
+def get_contents(col):
+    total = 0
 
-            for w in we_want:
-                if w == col and outer not in holds_our_targets:
-                    holds_our_targets.append(outer)
-            
-    for h in holds_our_targets:
-        if h not in we_want:
-            we_want.append(h)
+    dec = col.split('x')
+    num = int(dec[0])
+    col = dec[1]
 
-print "task_1:",len(holds_our_targets)
-print "task_2: GAVE UP ON THIS" 
+    if col == "other bags.":
+        return 0
+    else:
+        for child in d[col]:
+            child_num = int(child.split("x")[0])
+            total = total + child_num * (get_contents(child) + 1)
+
+    return total
+
+print "task_1:",can_contain("shiny gold")
+print "task_2:",get_contents("1xshiny gold")
