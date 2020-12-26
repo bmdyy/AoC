@@ -1,8 +1,13 @@
 #!/usr/bin/python
 
-in_ = "784235916"
+TASK = 2
+in_ = "389125467"
 
 cups = [int(x) for x in in_]
+
+if TASK == 2:
+    for i in range(max(cups)+1, 1000000+1):
+        cups.append(i)
 
 def disp_cups(curr):
     print "cups\t",
@@ -14,17 +19,17 @@ def disp_cups(curr):
     print ""
 
 current_cup = cups[0]
-for move in range(100):
-    print "-- move",(move+1),"--"
+for move in range(10000000):
+    #print "-- move",(move+1),"--"
 
     # display cups
-    disp_cups(current_cup)
+    #disp_cups(current_cup)
 
     # pick up cups + display
     pickup = []
     for _ in range(3):
         pickup.append(cups.pop((cups.index(current_cup)+1)%len(cups)))
-    print "pickup\t", " ".join([str(x) for x in pickup])
+    #print "pickup\t", " ".join([str(x) for x in pickup])
 
     # calc destination
     dest = current_cup - 1
@@ -32,7 +37,7 @@ for move in range(100):
         dest -= 1
         if dest <= 0:
             dest = max(cups)
-    print "dest\t", dest
+    #print "dest\t", dest
 
     # calculate index of destination cup
     j = cups.index(dest)
@@ -44,7 +49,7 @@ for move in range(100):
     # update current cup
     current_cup = cups[(cups.index(current_cup) + 1) % len(cups)]
 
-    print ""
+    #print ""
 
-print "-- final --"
+#print "-- final --"
 disp_cups(current_cup)
