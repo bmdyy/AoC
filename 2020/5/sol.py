@@ -24,7 +24,7 @@ def seat_id(bsp):
     return r * 8 + c # seat id
 
 # parse the file
-seats = [seat_id(i) for i in open("input","r")]
+seats = [seat_id(i) for i in open("aoc_day5","r")]
 
 if TASK == 1:
     print max(seats)

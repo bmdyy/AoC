@@ -48,35 +48,49 @@ for ticket in nearby_tickets:
 
 print "task_1:", error_rate
 
-# determine which possible 
-# orders there are
-possible = []
+# determine all possiblities for
+# each field
+possible = {}
+# loop through all valid tickets
 for ticket in valid_tickets:
-    order = [None] * len(ticket)
+    # loop through all fields of the ticket
     for i in range(len(ticket)):
+        # check the field against all
+        # possible ranges, to see which are
+        # possibilites at this position
         for field_name in ranges:
-            if (ticket[i] in ranges[field_name][0] or \
-                    ticket[i] in ranges[field_name][1]) and \
-                    field_name not in order:
-                        order[i] = field_name
-    if order not in possible:
-        possible.append(order)
+            if ticket[i] in ranges[field_name][0] or \
+                    ticket[i] in ranges[field_name][1]:
+                if field_name in possible and \
+                        i not in possible[field_name]:
+                    possible[field_name].append(i)
+                else:
+                    possible[field_name] = [i]
 
-# check all tickets against all 
-# possible orders until we find
-# one which suits all
-for order in possible:
-    suitsAll = True
-    for ticket in valid_tickets:
-        for i in range(len(ticket)):
-            if ticket[i] not in ranges[order[i]][0] and \
-                    ticket[i] not in ranges[order[i]][1]:
-                suitsAll = False
+# create a list of the fields
+# we have left to allocate a position
+# in the final order
+fields_left = []
+for field_name in ranges:
+    fields_left.append(field_name)
 
-    # we have an order which works for all tickets
-    if True:
-        prod = 1
-        for i in range(len(my_ticket)):
-            if "departure" in order[i]:
-                prod *= my_ticket[i]
-        print prod
+# store the final order
+order = [None] * len(fields_left)
+
+for i in range(1, len(possible)):
+    possible[i-1] = list(set(possible[i]) - set(possible[i-1]))
+
+# loop until we ordered all field
+# names in their respective positions
+while len(fields_left) > 0:
+    for field in fields_left:
+        if len(possible[field]) == 1:
+            i = possible[field][0]
+            order[i] = field
+            fields_left.remove(field)
+            for p in possible:
+                if i in possible[p]:
+                    possible[p].remove(i)
+            print order
+            print fields_left
+            print possible
