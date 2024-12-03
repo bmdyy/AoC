@@ -26,9 +26,7 @@ l1.sort()
 l2.sort()
 
 # Calculate the total distance between the pairs
-total_distance = sum([abs(l1[i] - l2[i]) for i in range(len(l1))])
-print("Part 1:", total_distance)
+print("Part 1:", sum([abs(l1[i] - l2[i]) for i in range(len(l1))]))
 
 # Calculate the similarity score
-similarity_score = sum([l1[i] * (count_map[l1[i]] if l1[i] in count_map else 0) for i in range(len(l1))])
-print("Part 2:", similarity_score)
+print("Part 2:", sum([l1[i] * (count_map[l1[i]] if l1[i] in count_map else 0) for i in range(len(l1))]))
