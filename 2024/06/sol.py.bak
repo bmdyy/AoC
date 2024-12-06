@@ -1,0 +1,129 @@
+#!/usr/bin/python
+
+# Advent of Code 2024, Day 5
+# William Moody (@bmdyy)
+# 06.12.2024
+
+with open("input.txt","r") as f:
+    board = [list(line.strip()) for line in f.readlines()]
+
+rows = len(board)
+cols = len(board[0])
+
+def print_board():
+    for row in board:
+        print("".join(row))
+
+def find_guard():
+    for r in range(rows):
+        for c in range(cols):
+            if board[r][c] == "^":
+                return r, c
+
+guard_r, guard_c = find_guard()
+guard_dir = "UP"
+guard_left_board = False
+guard_just_moved = False
+
+# keep a list of obstacles and what direction I was facing when I hit it.
+# if I were to hit an obstacle at my current location, would I end up hitting one of the previous obstacles with the same direction?
+history = []
+
+def do_step():
+    global guard_r, guard_c, guard_dir, guard_left_board, guard_just_moved, history
+
+    # If there is something directly in front of you, turn right 90 degrees.
+    # Otherwise, take a step forward.
+
+    old_guard_r = guard_r
+    old_guard_c = guard_c
+    old_guard_dir = guard_dir
+
+    if guard_dir == "UP":
+        if guard_r > 0:
+            if board[guard_r-1][guard_c] == "#":
+                guard_dir = "RIGHT"
+            else:
+                guard_r -= 1
+        else:
+            guard_left_board = True
+
+    elif guard_dir == "RIGHT":
+        if guard_c < cols-1:
+            if board[guard_r][guard_c+1] == "#":
+                guard_dir = "DOWN"
+            else:
+                guard_c += 1
+        else:
+            guard_left_board = True
+
+    elif guard_dir == "DOWN":
+        if guard_r < rows-1:
+            if board[guard_r+1][guard_c] == "#":
+                guard_dir = "LEFT"
+            else:
+                guard_r += 1
+        else:
+            guard_left_board = True
+
+    elif guard_dir == "LEFT":
+        if guard_c > 0:
+            if board[guard_r][guard_c-1] == "#":
+                guard_dir = "UP"
+            else:
+                guard_c -= 1
+        else:
+            guard_left_board = True
+
+    guard_just_moved = not (old_guard_r == guard_r and old_guard_c == guard_c)
+
+    if guard_just_moved:
+        board[old_guard_r][old_guard_c] = "X"
+        board[guard_r][guard_c] = "\x1b[1;31mG\033[0m"
+    else: # Guard just hit an obstacle, record this in history
+        history.append((old_guard_r, old_guard_c, old_guard_dir))
+        #print("Hit an obstacle at", history[-1])
+    
+    if guard_left_board:
+        board[guard_r][guard_c] = "X"
+
+possible_obstacle_locations = []
+
+while not guard_left_board:
+    #print(f"({guard_r}, {guard_c}) facing {guard_dir}")
+    do_step()
+
+    # Imagine placing an obstacle in front of me
+    if guard_dir == "LEFT":
+        for r in range(0, guard_r):
+            if (r, guard_c, "UP") in history:
+                possible_obstacle_locations.append((guard_r, guard_c-1))
+
+    elif guard_dir == "RIGHT":
+        for r in range(guard_r+1, rows-1):
+            if (r, guard_c, "DOWN") in history:
+                possible_obstacle_locations.append((guard_r, guard_c+1))
+
+    elif guard_dir == "UP":
+        for c in range(guard_c+1,cols-1):
+            if (guard_r, c, "RIGHT") in history:
+                possible_obstacle_locations.append((guard_r-1, guard_c))
+                
+    elif guard_dir == "DOWN":
+        for c in range(0, guard_c):
+            if (guard_r, c, "LEFT") in history:
+                possible_obstacle_locations.append((guard_r+1, guard_c))
+
+print("Guard left the board!")
+#print_board()
+
+print(possible_obstacle_locations)
+
+x_count = 0
+for r in range(rows):
+    for c in range(cols):
+        if board[r][c] == "X":
+            x_count += 1
+
+print("Part 1:",x_count)
+#print("Part 2:",len(possible_obstacle_locations))

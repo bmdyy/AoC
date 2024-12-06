@@ -28,12 +28,10 @@ for update in updates.split("\n"):
         if update[n] in rule_map:
             for m in range(n):
                 if update[m] in rule_map[update[n]]:
-                    #print(update[m],"came before",update[n],"!")
                     is_valid_update = False
         n += 1
 
     if is_valid_update:
-        #print(update)
         mid = update[int((len(update)-1)/2)]
         mid_total += mid
     else:
@@ -41,4 +39,28 @@ for update in updates.split("\n"):
 
 print("Part 1:", mid_total)
 
-# TODO:
+def fix_update(u, i):
+    if i < 0:
+        return u
+
+    #print("Index:", i, "Value:", u[i])
+
+    if u[i] in rule_map:
+        #print("- Rules:", rule_map[u[i]])
+        for j in range(i):
+            if u[j] in rule_map[u[i]]:
+                #print("- - RULE_BREAK:",u[j],"at index (j)",j,"came before",u[i],"at index (i)",i)
+                u2 = u[:j] + [u[i],u[j]] + u[j+1:i] + u[i+1:]
+                #print(u2)
+                return fix_update(u2, len(u2)-1)
+
+    return fix_update(u, i-1)
+
+mid_total = 0
+
+for inv_update in invalid_updates:
+    fixed_update = fix_update(inv_update, len(inv_update)-1)
+    mid = fixed_update[int((len(fixed_update)-1)/2)]
+    mid_total += mid
+
+print("Part 2:", mid_total)
