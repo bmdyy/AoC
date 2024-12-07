@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Advent of Code 2024, Day 5
+# Advent of Code 2024, Day 6
 # William Moody (@bmdyy)
 # 06.12.2024
 
