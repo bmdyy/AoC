@@ -2,7 +2,7 @@
 
 # Advent of Code 2024, Day 6
 # William Moody (@bmdyy)
-# 07.12.2024
+# 08.12.2024
 
 import time
 
