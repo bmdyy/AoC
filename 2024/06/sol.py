@@ -2,110 +2,185 @@
 
 # Advent of Code 2024, Day 6
 # William Moody (@bmdyy)
-# 06.12.2024
+# 07.12.2024
 
 import time
 
 with open("input.txt","r") as f:
     inp = [list(line.strip()) for line in f.readlines()]
 
-rows, cols = len(inp), len(inp[0])
-guard_r, guard_c = 0, 0
-guard_dir = "UP"
-guard_left_board = False
-obstacles = []
+# Constants for describing guard's direction
+D_UP, D_RIGHT, D_DOWN, D_LEFT = 0, 1, 2, 3
 
+# Variables to keep track of size of map
+rows, cols = len(inp), len(inp[0])
+
+# Variables to keep track of guard's position and direction
+g_row = 0
+g_col = 0
+g_dir = D_UP
+g_left_map = False
+
+# List of obstacles on the map
+obs = []
+
+# List of positions that the guard visited
+visited = []
+
+# For part two
+g_in_loop = False 
+g_history = [] # List of positions the guard was at, and what position he was facing
+
+# Parse the input to determine the guard's starting position
 for r in range(rows):
     for c in range(cols):
-        if inp[r][c] == "^":
-            guard_r, guard_c = r, c
-        elif inp[r][c] == "#":
-            obstacles.append((r, c))
+        if inp[r][c] == "#":
+            obs.append((r, c))
+        elif inp[r][c] == "^":
+            g_row, g_col = r, c
 
-init_guard_r, init_guard_c = guard_r, guard_c
+# Remember the initial values for part 2
+g_row_init = g_row
+g_col_init = g_col
+obs_orig = obs.copy()
 
-visited = [(guard_r, guard_c)]
-visited_with_dir = [(guard_r, guard_c, guard_dir)]
+# Add the guard's starting position to the visited list
+visited.append((g_row, g_col))
 
-def do_step(obstacles, set_visited=True):
-    global rows, cols, guard_r, guard_c, guard_dir, guard_left_board, visited
+# Moves the guard as far as possible in the current direction (until an obstacle is hit, or he leaves the map)
+def step():
+    global g_row, g_col, g_dir, g_left_map, obs, visited, rows, cols, g_in_loop, g_history
 
-    if guard_dir == "UP":
-        if guard_r > 0:
-            if (guard_r-1, guard_c) in obstacles:
-                guard_dir = "RIGHT"
+    if (g_row, g_col, g_dir) in g_history:
+        g_in_loop = True
+    else:
+        g_history.append((g_row, g_col, g_dir))
+
+        # Facing UP
+        if g_dir == D_UP:
+            # Calculate which obstacle is hit
+            tmp_obs = [val for idx, val in enumerate(obs) if val[0] < g_row and val[1] == g_col]
+            if len(tmp_obs) > 0:
+                obs_hit = sorted(tmp_obs, key=lambda o: -o[0])[0]
             else:
-                guard_r -= 1
-        else:
-            guard_left_board = True
-    elif guard_dir == "DOWN":
-        if guard_r < rows-1:
-            if (guard_r+1, guard_c) in obstacles:
-                guard_dir = "LEFT"
+                # Guard left the map. Create a fake obstacle for the following calculations
+                obs_hit = (-1, g_col)
+                g_left_map = True
+
+            # Add all the positions inbetween that were visited
+            r = g_row - 1
+            while r > obs_hit[0]:
+                visited.append((r, g_col))
+                r -= 1
+
+            # Update the guard's position and direction
+            g_row = obs_hit[0] + 1
+            g_dir = D_RIGHT
+
+        # Facing RIGHT
+        elif g_dir == D_RIGHT:
+            # Calculate which obstacle is hit
+            tmp_obs = [val for idx, val in enumerate(obs) if val[0] == g_row and val[1] > g_col]
+            if len(tmp_obs) > 0:
+                obs_hit = sorted(tmp_obs, key=lambda o: o[1])[0]
             else:
-                guard_r += 1
-        else:
-            guard_left_board = True
-    elif guard_dir == "LEFT":
-        if guard_c > 0:
-            if (guard_r, guard_c-1) in obstacles:
-                guard_dir = "UP"
+                # Guard left the map. Create a fake obstacle for the following calculations
+                obs_hit = (g_row, cols)
+                g_left_map = True
+
+            # Add all the positions inbetween that were visited
+            c = g_col + 1
+            while c < obs_hit[1]:
+                visited.append((g_row, c))
+                c += 1
+            
+            # Update the guard's position and direction
+            g_col = obs_hit[1] - 1
+            g_dir = D_DOWN
+
+        # Facing DOWN
+        elif g_dir == D_DOWN:
+            # Calculate which obstacle is hit
+            tmp_obs = [val for idx, val in enumerate(obs) if val[0] > g_row and val[1] == g_col]
+            if len(tmp_obs) > 0:
+                obs_hit = sorted(tmp_obs, key=lambda o: o[0])[0]
             else:
-                guard_c -= 1
-        else:
-            guard_left_board = True
-    elif guard_dir == "RIGHT":
-        if guard_c < cols-1:
-            if (guard_r, guard_c+1) in obstacles:
-                guard_dir = "DOWN"
+                # Guard left the map. Create a fake obstacle for the following calculations
+                obs_hit = (rows, g_col)
+                g_left_map = True
+
+            # Add all the positions inbetween that were visited
+            r = g_row + 1
+            while r < obs_hit[0]:
+                visited.append((r, g_col))
+                r += 1
+            
+            # Update the guard's position and direction
+            g_row = obs_hit[0] - 1
+            g_dir = D_LEFT
+
+        
+        # Facing LEFT
+        elif g_dir == D_LEFT:
+            # Calculate which obstacle is hit
+            tmp_obs = [val for idx, val in enumerate(obs) if val[0] == g_row and val[1] < g_col]
+            if len(tmp_obs) > 0:
+                obs_hit = sorted(tmp_obs, key=lambda o: -o[1])[0]
             else:
-                guard_c += 1
-        else:
-            guard_left_board = True
+                # Guard left the map. Create a fake obstacle for the following calculations
+                obs_hit = (g_row, -1)
+                g_left_map = True
 
-    if set_visited:
-        if not (guard_r, guard_c) in visited:
-            visited.append((guard_r, guard_c))
+            # Add all the positions inbetween that were visited
+            c = g_col - 1
+            while c > obs_hit[1]:
+                visited.append((g_row, c))
+                c -= 1
+            
+            # Update the guard's position and direction
+            g_col = obs_hit[1] + 1
+            g_dir = D_UP
 
-        visited_with_dir.append((guard_r, guard_c, guard_dir))
+t_start = time.time()
+# Simulate guard's actions until he leaves the map
+while not g_left_map:
+    step()
+t_ela = time.time() - t_start
 
-while not guard_left_board:
-    do_step(obstacles=obstacles)
+# Remove duplicates from visited array
+tmp = set()
+duplicates = [pos for pos in visited if pos in tmp or tmp.add(pos)]
 
-print("Part 1:",len(visited))
+visited_distinct = list(dict.fromkeys(visited))
+print("Part 1:", len(visited_distinct))
+#print(f"(This next part should take around {round(len(visited_distinct) * t_ela, 3)} seconds)")
 
-solutions = []
-for (r,c,d) in visited_with_dir:
-    obs_r, obs_c = -1, -1
-    if d == "UP" and r > 0:
-        obs_r, obs_c = r-1, c
-    elif d == "LEFT" and c > 0:
-        obs_r, obs_c = r, c-1
-    elif d == "DOWN" and r < rows-1:
-        obs_r, obs_c = r+1, c
-    elif d == "RIGHT" and c < cols-1:
-        obs_r, obs_c = r, c+1
-
-    if ((obs_r, obs_c) in solutions) or (obs_r < 0 and obs_c < 0) or (obs_r == init_guard_r and obs_c == init_guard_c):
+obs_pos_that_create_loop = []
+t_start = time.time()
+for r, c in visited_distinct:
+    # Skip the guard's starting position
+    if r == g_row_init and c == g_col_init:
         continue
 
-    tmp_obstacles = obstacles.copy()
-    tmp_obstacles.append((obs_r, obs_c))
-    #print(tmp_obstacles)
+    # Reset the guard's parameters
+    g_row, g_col = g_row_init, g_col_init
+    g_dir = D_UP
+    g_left_map = False
+    g_in_loop = False
+    g_history = []
+    
+    # Add an imaginary obstacle at (r, c)
+    obs.append((r, c))
 
-    guard_r, guard_c = init_guard_r, init_guard_c
-    guard_dir = "UP"
-    guard_left_board = False
-    is_loop = False
-    t_start = time.time()
-    while (not is_loop) and (not guard_left_board):
-        do_step(obstacles=tmp_obstacles, set_visited=False)
+    # Simulate
+    while not g_left_map and not g_in_loop:
+        step()
 
-        is_loop = (time.time() - t_start > 1)
+    if g_in_loop:
+        obs_pos_that_create_loop.append((r, c))
 
-    if is_loop:
-        sol = (obs_r, obs_c)
-        print(sol)
-        solutions.append(sol)
+    # Remove the imaginary obstacle
+    obs.pop()
 
-print("Part 2:",len(solutions))
+print("Part 2:", len(obs_pos_that_create_loop))
+#print(f"(Took {round(time.time() - t_start, 3)} seconds)")
